@@ -63,11 +63,33 @@ export default function Popup() {
     setRedirect({ text: '리디렉션 없음', level: 'safe' })
   }
 
-  const openReport = () => {
-    const url = chrome?.runtime?.getURL?.('report.html') || 'report.html'
-    if (chrome?.tabs?.create) chrome.tabs.create({ url })
-    else window.open(url, '_blank')
-  }
+    const openReport = async () => {
+    // 보고 있는 URL과 분석 결과를 스토리지에 저장 (선택사항)
+    const reportData = {
+        url,
+        score,
+        verdict,
+        ssl,
+        whois,
+        blacklist,
+        keyword,
+        redirect,
+        analyzedAt: new Date().toISOString()
+    }
+
+    try {
+        await chrome.storage.local.set({ reportData })
+    } catch (e) {
+        console.warn('storage set failed', e)
+    }
+
+    // 쿼리스트링에도 URL을 같이 붙여주기
+    const target = chrome?.runtime?.getURL?.(`report.html?url=${encodeURIComponent(url)}`) 
+        || `report.html?url=${encodeURIComponent(url)}`
+
+    if (chrome?.tabs?.create) chrome.tabs.create({ url: target })
+    else window.open(target, '_blank')
+    }
 
   const onAddKeyword = (e) => {
     e.preventDefault()
